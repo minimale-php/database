@@ -1,78 +1,303 @@
-# PHP Template Project
+# Minimale Database
 
-A basic starter template for PHP projects.
-It provides a clean structure and example files to help you kick-start development with modern PHP tooling and best
-practices.
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D8.5-blue)](https://www.php.net/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-## 💻 Technologies
+A minimal PDO wrapper for PHP 8.5+ with event dispatching and transaction support.
 
-* **PHP 8.5**
-* **Composer** — dependency management
-* **PSR-4** — autoloading standard
-* **PHPUnit** — unit testing
-* **Git** — version control
-* **PHP-CS-Fixer** — code style fixing
-* **PHPStan** — static analysis
-* **Rector** — automated refactoring
-* **Infection** — mutation testing
-* **Mockery** — test doubles and mocks
+## Table of Contents
 
-## 📁 Project Structure
+- [Installation](#installation)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+  - [Supported Drivers](#supported-drivers)
+  - [Basic Queries](#basic-queries)
+  - [Transactions](#transactions)
+  - [Event Dispatching](#event-dispatching)
+  - [Data Transformation](#data-transformation)
+  - [Driver Registry](#driver-registry)
+  - [Custom Drivers](#custom-drivers)
+- [Requirements](#requirements)
+- [Testing](#testing)
+- [License](#license)
 
-```text
-php-template-project/
-├── src/                 # Application source code
-│   └── Example.php      # Example PHP class
-├── tests/               # Test suite
-│   └── ExampleTest.php  # Example test case
-├── vendor/              # Composer dependencies
-├── .gitignore           # Git ignore rules
-├── composer.json        # Composer configuration
-├── phpunit.xml          # PHPUnit configuration
-├── php-cs-fixer.php     # PHP-CS-Fixer configuration
-├── phpstan.neon         # PHPStan configuration
-├── rector.php           # Rector configuration
-└── infection.json5      # Infection configuration
-```
-
-## ▶️ Available Commands
-
-All commands are executed via **Composer scripts**:
+## Installation
 
 ```bash
-composer <command>
+composer require minimale/database
 ```
 
-### 🎨 Code Style
+## Features
 
-| Command               | Description                                                   |
-|-----------------------|---------------------------------------------------------------|
-| `composer fix:style`  | Automatically fix code style issues using PHP-CS-Fixer        |
-| `composer test:style` | Check code style without applying changes (dry-run with diff) |
+- **Simple API** — Clean interface for database operations
+- **Event Dispatching** — PSR-14 compatible event system
+- **Transaction Support** — Built-in transaction management
+- **Multiple Drivers** — SQLite and Firebird support
+- **Type Safety** — Strict types throughout
+- **Query Normalization** — Automatic parameter binding and query normalization
+- **Data Transformation** — Extensible data transformation layer
 
-### 🔁 Refactoring
+## Quick Start
 
-| Command                | Description                                                 |
-|------------------------|-------------------------------------------------------------|
-| `composer refactor`    | Apply automated refactoring using Rector                    |
-| `composer test:rector` | Preview refactoring changes without applying them (dry-run) |
+```php
+use Minimale\Database\DatabaseManager;
+use Minimale\Database\DriverFactory;
 
-### 🔍 Static Analysis
+// Create and connect driver
+$driver = DriverFactory::create(['dsn' => 'sqlite::memory:']);
+$driver->connect('sqlite::memory:');
 
-| Command               | Description                 |
-|-----------------------|-----------------------------|
-| `composer test:types` | Run PHPStan static analysis |
+// Initialize manager
+$db = new DatabaseManager($driver);
 
-### 🧪 Testing
+// Create table
+$db->execute('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)');
 
-| Command                  | Description                                    |
-|--------------------------|------------------------------------------------|
-| `composer test:unit`     | Run PHPUnit test suite                         |
-| `composer test:coverage` | Run tests with code coverage (requires Xdebug) |
-| `composer test:mutation` | Run mutation testing using Infection           |
+// Insert data
+$db->execute('INSERT INTO users (name) VALUES (?)', ['John']);
 
-### ✅ Full Test Suite
+// Query data
+$result = $db->execute('SELECT * FROM users WHERE id = ?', [1]);
+$user = $result->fetch();
 
-| Command         | Description                                                    |
-|-----------------|----------------------------------------------------------------|
-| `composer test` | Run all checks: style, rector, types, unit tests, and mutation |
+// Transactions
+$db->beginTransaction();
+try {
+    $db->execute('INSERT INTO users (name) VALUES (?)', ['Alice']);
+    $db->commit();
+} catch (\Exception $e) {
+    $db->rollback();
+    throw $e;
+}
+```
+
+## Usage
+
+### Supported Drivers
+
+#### SQLite
+
+```php
+$driver = DriverFactory::create(['dsn' => 'sqlite::memory:']);
+$driver->connect('sqlite::memory:');
+
+// Or with file
+$driver = DriverFactory::create(['dsn' => 'sqlite:/path/to/database.db']);
+$driver->connect('sqlite:/path/to/database.db');
+```
+
+#### Firebird
+
+```php
+$driver = DriverFactory::create([
+    'dsn' => 'firebird:dbname=localhost:/path/to/database.fdb'
+]);
+$driver->connect(
+    'firebird:dbname=localhost:/path/to/database.fdb',
+    'SYSDBA',
+    'masterkey'
+);
+```
+
+### Basic Queries
+
+```php
+// Fetch single row
+$result = $db->execute('SELECT * FROM users WHERE id = ?', [1]);
+$user = $result->fetch();
+
+// Fetch single value
+$count = $db->execute('SELECT COUNT(*) FROM users')->fetchValue();
+
+// Fetch all rows
+$users = $db->execute('SELECT * FROM users')->fetchAll();
+
+// Get affected row count
+$result = $db->execute('DELETE FROM users WHERE active = ?', [0]);
+$deleted = $result->rowCount();
+```
+
+### Transactions
+
+```php
+$db->beginTransaction();
+
+try {
+    $db->execute('INSERT INTO users (name) VALUES (?)', ['Alice']);
+    $db->execute('INSERT INTO logs (action) VALUES (?)', ['user_created']);
+    $db->commit();
+} catch (\Exception $e) {
+    $db->rollback();
+    throw $e;
+}
+```
+
+### Event Dispatching
+
+```php
+use Psr\EventDispatcher\EventDispatcherInterface;
+
+$driver = DriverFactory::create(
+    ['dsn' => 'sqlite::memory:'],
+    $eventDispatcher // Your PSR-14 event dispatcher
+);
+```
+
+The library dispatches the following events:
+
+- **ConnectionEstablishedEvent** — Fired when a database connection is successfully established
+- **ConnectionClosedEvent** — Fired when a database connection is closed
+- **QueryExecutedEvent** — Fired after a query is executed (includes query, parameters, and execution time)
+- **TransactionBeganEvent** — Fired when a transaction starts
+- **TransactionCommittedEvent** — Fired when a transaction is committed
+- **TransactionRolledBackEvent** — Fired when a transaction is rolled back
+
+### Data Transformation
+
+The library includes a data transformation layer that automatically handles encoding/decoding of data between PHP and the database. Each driver can have its own transformer:
+
+- **PassthroughDataTransformer** (SQLite default) — No transformation, passes data as-is
+- **FirebirdDataTransformer** (Firebird default) — Handles Firebird-specific data types and conversions
+
+You can also implement custom transformers by implementing the `DataTransformerInterface`:
+
+```php
+use Minimale\Database\Driver\DataTransformer\DataTransformerInterface;
+
+class CustomTransformer implements DataTransformerInterface
+{
+    public function encode(mixed $value): mixed
+    {
+        // Transform PHP value before storing in database
+        return $value;
+    }
+
+    public function decode(mixed $value): mixed
+    {
+        // Transform database value after fetching
+        return $value;
+    }
+}
+
+// Use custom transformer
+$driver = new SQLiteDriver(
+    eventDispatcher: $eventDispatcher,
+    dataTransformer: new CustomTransformer()
+);
+```
+
+### Driver Registry
+
+The `DriverRegistry` allows you to manage multiple database connections with named aliases, making it easy to work with
+multiple databases in your application.
+
+```php
+use Minimale\Database\DriverRegistry;
+use Minimale\Database\DriverFactory;
+
+$registry = new DriverRegistry();
+
+// Register multiple drivers
+$mysqlDriver = DriverFactory::create(['dsn' => 'mysql:host=localhost;dbname=app']);
+$mysqlDriver->connect('mysql:host=localhost;dbname=app', 'user', 'pass');
+$registry->add('mysql', $mysqlDriver);
+
+$sqliteDriver = DriverFactory::create(['dsn' => 'sqlite:/path/to/db.sqlite']);
+$sqliteDriver->connect('sqlite:/path/to/db.sqlite');
+$registry->add('sqlite', $sqliteDriver);
+
+// Retrieve and use registered drivers
+$driver = $registry->get('mysql');
+$db = new DatabaseManager($driver);
+
+// Check if driver exists
+if ($registry->has('sqlite')) {
+    // Use SQLite connection
+}
+
+// List all registered aliases
+$aliases = $registry->all(); // ['mysql', 'sqlite']
+
+// Remove a driver
+$registry->remove('sqlite');
+```
+
+**Available methods:**
+
+- **`add(string $alias, DriverInterface $driver): void`** — Register a driver with an alias
+- **`get(string $alias): DriverInterface`** — Retrieve a registered driver by alias
+- **`has(string $alias): bool`** — Check if a driver is registered
+- **`remove(string $alias): void`** — Remove a driver from the registry
+- **`all(): array`** — Get all registered driver aliases
+
+### Custom Drivers
+
+You can create custom drivers by implementing the `DriverInterface`:
+
+```php
+use Minimale\Database\Driver\DriverInterface;
+use Minimale\Database\Result;
+
+class CustomDriver implements DriverInterface
+{
+    public function connect(string $dsn, ?string $username = null, ?string $password = null): void
+    {
+        // Implement connection logic
+    }
+
+    public function execute(string $query, array $parameters = []): Result
+    {
+        // Implement query execution
+    }
+
+    public function disconnect(): void
+    {
+        // Implement disconnection logic
+    }
+
+    public function beginTransaction(): void
+    {
+        // Implement transaction start
+    }
+
+    public function commit(): void
+    {
+        // Implement transaction commit
+    }
+
+    public function rollback(): void
+    {
+        // Implement transaction rollback
+    }
+}
+```
+
+## Requirements
+
+- PHP 8.5 or higher
+- PDO extension
+- PSR Event Dispatcher (psr/event-dispatcher)
+
+## Testing
+
+```bash
+# Run all tests
+composer test
+
+# Unit tests only
+composer test:unit
+
+# Code coverage
+composer test:coverage
+
+# Mutation testing
+composer test:mutation
+
+# Static analysis
+composer test:types
+```
+
+## License
+
+MIT

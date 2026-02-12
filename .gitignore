@@ -1,4 +1,13 @@
 /vendor/
-.phpunit.cache
-.php-cs-fixer.cache
+/composer.lock
+/.phpunit.cache
+/.phpunit.result.cache
+/phpunit.xml
+/.idea/
+/.vscode/
+/coverage/
+/var
+*.log
+.DS_Store
 infection.log
+.php-cs-fixer.cache

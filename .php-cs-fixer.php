@@ -12,6 +12,7 @@ return new PhpCsFixer\Config()
         'php_unit_test_case_static_method_calls' => ['call_type' => 'self'],
         'declare_strict_types' => true,
         'void_return' => true,
+        'multiline_promoted_properties' => ['minimum_number_of_parameters' => 1],
         'global_namespace_import' => [
             'import_classes' => true,
             'import_constants' => false,
