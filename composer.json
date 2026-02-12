@@ -2,7 +2,7 @@
     "name": "minimale/database",
     "description": "A minimal PDO wrapper for PHP.",
     "type": "library",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "license": "MIT",
     "keywords": ["database", "pdo", "wrapper", "firebird", "sqlite"],
     "autoload": {
