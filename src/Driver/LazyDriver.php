@@ -77,14 +77,6 @@ final class LazyDriver implements DriverInterface
 
         $this->eventDispatcher->dispatch(new LazyConnectionRequestedEvent($this->alias, $this));
 
-        $this->assertConnected();
-    }
-
-    /**
-     * @throws ConnectionException if the driver is not connected
-     */
-    private function assertConnected(): void
-    {
         if (!$this->connected) {
             throw new ConnectionException(
                 \sprintf('Lazy connection for driver "%s" could not be established', $this->alias),

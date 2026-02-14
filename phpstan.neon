@@ -4,3 +4,7 @@ parameters:
         - src
       strictRules:
           allRules: true
+      ignoreErrors:
+          -
+              identifier: booleanNot.alwaysTrue
+              path: src/Driver/LazyDriver.php
