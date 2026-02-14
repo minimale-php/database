@@ -85,7 +85,7 @@ final class LazyDriver implements DriverInterface
      */
     private function assertConnected(): void
     {
-        if (!$this->connected) {
+        if (false === $this->connected) {
             throw new ConnectionException(
                 \sprintf('Lazy connection for driver "%s" could not be established', $this->alias),
             );
