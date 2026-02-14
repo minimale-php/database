@@ -8,14 +8,18 @@ use Minimale\Database\Driver\QueryNormalizer\DefaultQueryNormalizer;
 use Minimale\Database\Driver\QueryNormalizer\RegexQueryTokenizer;
 use Minimale\Database\Exception\QueryNormalizerException;
 use Minimale\Database\Tests\AbstractTestCase;
+use Override;
 use stdClass;
 
 final class DefaultQueryNormalizerTest extends AbstractTestCase
 {
     private DefaultQueryNormalizer $normalizer;
 
+    #[Override]
     protected function setUp(): void
     {
+        parent::setUp();
+
         $this->normalizer = new DefaultQueryNormalizer(new RegexQueryTokenizer());
     }
 

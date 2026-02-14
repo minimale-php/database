@@ -32,6 +32,7 @@ final class SQLiteDriverTest extends AbstractTestCase
 
     private EventDispatcherInterface&MockInterface $eventDispatcher;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -224,8 +225,6 @@ final class SQLiteDriverTest extends AbstractTestCase
         $this->eventDispatcher->expects('dispatch')->never();
 
         $this->driver->disconnect();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testBeginTransactionStartsTransaction(): void
@@ -384,6 +383,51 @@ final class SQLiteDriverTest extends AbstractTestCase
         $this->expectExceptionMessage('Could not roll back transaction');
 
         $this->driver->rollback();
+    }
+
+    public function testExecuteWithNullParameter(): void
+    {
+        $this->eventDispatcher->allows('dispatch');
+        $this->driver->connect(self::DSN);
+
+        $this->driver->execute('CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)');
+        $this->driver->execute('INSERT INTO test (id, name) VALUES (:id, :name)', ['id' => 1, 'name' => null]);
+
+        $result = $this->driver->execute('SELECT * FROM test WHERE id = :id', ['id' => 1]);
+
+        self::assertSame(['id' => 1, 'name' => null], $result->fetch());
+    }
+
+    public function testExecuteWithBooleanParameters(): void
+    {
+        $this->eventDispatcher->allows('dispatch');
+        $this->driver->connect(self::DSN);
+
+        $this->driver->execute('CREATE TABLE flags (id INTEGER PRIMARY KEY, active INTEGER, deleted INTEGER)');
+        $this->driver->execute(
+            'INSERT INTO flags (id, active, deleted) VALUES (:id, :active, :deleted)',
+            ['id' => 1, 'active' => true, 'deleted' => false]
+        );
+
+        $result = $this->driver->execute('SELECT * FROM flags WHERE id = :id', ['id' => 1]);
+
+        self::assertSame(['id' => 1, 'active' => 1, 'deleted' => ''], $result->fetch());
+    }
+
+    public function testExecuteWithBooleanTrueCastsToOne(): void
+    {
+        $this->eventDispatcher->allows('dispatch');
+        $this->driver->connect(self::DSN);
+
+        $this->driver->execute('CREATE TABLE bool_test (id INTEGER PRIMARY KEY, flag INTEGER)');
+        $this->driver->execute(
+            'INSERT INTO bool_test (id, flag) VALUES (:id, :flag)',
+            ['id' => 1, 'flag' => true]
+        );
+
+        $result = $this->driver->execute('SELECT flag FROM bool_test WHERE id = :id', ['id' => 1]);
+
+        self::assertSame(1, $result->fetchValue());
     }
 
     public function testTransactionsWorkWithoutEventDispatcher(): void

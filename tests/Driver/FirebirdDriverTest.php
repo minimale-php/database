@@ -32,6 +32,7 @@ final class FirebirdDriverTest extends AbstractTestCase
 
     private EventDispatcherInterface&MockInterface $eventDispatcher;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -224,8 +225,6 @@ final class FirebirdDriverTest extends AbstractTestCase
         $this->eventDispatcher->expects('dispatch')->never();
 
         $this->driver->disconnect();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testBeginTransactionStartsTransaction(): void

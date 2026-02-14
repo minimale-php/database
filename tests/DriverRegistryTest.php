@@ -9,6 +9,7 @@ use Minimale\Database\DriverRegistry;
 use Minimale\Database\Exception\RegistryException;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 
 final class DriverRegistryTest extends AbstractTestCase
 {
@@ -16,6 +17,7 @@ final class DriverRegistryTest extends AbstractTestCase
 
     private DriverInterface&MockInterface $driver;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

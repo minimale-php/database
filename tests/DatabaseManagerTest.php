@@ -9,6 +9,7 @@ use Minimale\Database\Driver\DriverInterface;
 use Minimale\Database\Result;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PDOStatement;
 
 final class DatabaseManagerTest extends AbstractTestCase
@@ -19,6 +20,7 @@ final class DatabaseManagerTest extends AbstractTestCase
 
     private Result $result;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -110,8 +112,6 @@ final class DatabaseManagerTest extends AbstractTestCase
         ;
 
         $this->manager->beginTransaction();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testCommitDelegatesToDriver(): void
@@ -121,8 +121,6 @@ final class DatabaseManagerTest extends AbstractTestCase
         ;
 
         $this->manager->commit();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testRollbackDelegatesToDriver(): void
@@ -132,7 +130,5 @@ final class DatabaseManagerTest extends AbstractTestCase
         ;
 
         $this->manager->rollback();
-
-        self::expectNotToPerformAssertions();
     }
 }

@@ -7,11 +7,13 @@ namespace Minimale\Database\Tests\Driver\QueryNormalizer;
 use Minimale\Database\Driver\QueryNormalizer\RegexQueryTokenizer;
 use Minimale\Database\Driver\QueryNormalizer\TokenType;
 use Minimale\Database\Tests\AbstractTestCase;
+use Override;
 
 final class RegexQueryTokenizerTest extends AbstractTestCase
 {
     private RegexQueryTokenizer $tokenizer;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

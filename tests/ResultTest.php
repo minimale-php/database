@@ -9,6 +9,7 @@ use Minimale\Database\Exception\ResultException;
 use Minimale\Database\Result;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -17,6 +18,7 @@ final class ResultTest extends AbstractTestCase
 {
     private PDOStatement&MockInterface $statement;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

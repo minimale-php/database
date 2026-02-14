@@ -6,11 +6,13 @@ namespace Minimale\Database\Tests\Driver\DataTransformer;
 
 use Minimale\Database\Driver\DataTransformer\PassthroughDataTransformer;
 use Minimale\Database\Tests\AbstractTestCase;
+use Override;
 
 final class PassthroughDataTransformerTest extends AbstractTestCase
 {
     private PassthroughDataTransformer $dataTransformer;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

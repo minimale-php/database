@@ -12,6 +12,7 @@ use Minimale\Database\Result;
 use Minimale\Database\Tests\AbstractTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PDOStatement;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
@@ -27,6 +28,7 @@ final class LazyDriverTest extends AbstractTestCase
 
     private LazyDriver $lazyDriver;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -87,8 +89,6 @@ final class LazyDriverTest extends AbstractTestCase
         ;
 
         $this->lazyDriver->beginTransaction();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testCommitTriggersLazyConnection(): void
@@ -113,8 +113,6 @@ final class LazyDriverTest extends AbstractTestCase
         ;
 
         $this->lazyDriver->commit();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testRollbackTriggersLazyConnection(): void
@@ -139,8 +137,6 @@ final class LazyDriverTest extends AbstractTestCase
         ;
 
         $this->lazyDriver->rollback();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testExecuteThrowsConnectionExceptionWhenListenerDoesNotConnect(): void
@@ -191,8 +187,6 @@ final class LazyDriverTest extends AbstractTestCase
 
         $this->lazyDriver->connect(self::DSN);
         $this->lazyDriver->connect(self::DSN);
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testDisconnectDelegatesToInnerDriverWhenConnected(): void
@@ -208,8 +202,6 @@ final class LazyDriverTest extends AbstractTestCase
 
         $this->lazyDriver->connect(self::DSN);
         $this->lazyDriver->disconnect();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testDisconnectDoesNothingWhenNotConnected(): void
@@ -219,8 +211,6 @@ final class LazyDriverTest extends AbstractTestCase
         ;
 
         $this->lazyDriver->disconnect();
-
-        self::expectNotToPerformAssertions();
     }
 
     public function testDisconnectAllowsReconnection(): void

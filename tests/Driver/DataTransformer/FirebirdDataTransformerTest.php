@@ -6,11 +6,13 @@ namespace Minimale\Database\Tests\Driver\DataTransformer;
 
 use Minimale\Database\Driver\DataTransformer\FirebirdDataTransformer;
 use Minimale\Database\Tests\AbstractTestCase;
+use Override;
 
 final class FirebirdDataTransformerTest extends AbstractTestCase
 {
     private FirebirdDataTransformer $dataTransformer;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
