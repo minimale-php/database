@@ -42,10 +42,10 @@ composer require minimale/database
 
 ```php
 use Minimale\Database\DatabaseManager;
-use Minimale\Database\DriverFactory;
+use Minimale\Database\Driver\SQLiteDriver;
 
 // Create and connect driver
-$driver = DriverFactory::create(['dsn' => 'sqlite::memory:']);
+$driver = new SQLiteDriver();
 $driver->connect('sqlite::memory:');
 
 // Initialize manager
@@ -79,20 +79,22 @@ try {
 #### SQLite
 
 ```php
-$driver = DriverFactory::create(['dsn' => 'sqlite::memory:']);
+use Minimale\Database\Driver\SQLiteDriver;
+
+$driver = new SQLiteDriver();
 $driver->connect('sqlite::memory:');
 
 // Or with file
-$driver = DriverFactory::create(['dsn' => 'sqlite:/path/to/database.db']);
+$driver = new SQLiteDriver();
 $driver->connect('sqlite:/path/to/database.db');
 ```
 
 #### Firebird
 
 ```php
-$driver = DriverFactory::create([
-    'dsn' => 'firebird:dbname=localhost:/path/to/database.fdb'
-]);
+use Minimale\Database\Driver\FirebirdDriver;
+
+$driver = new FirebirdDriver();
 $driver->connect(
     'firebird:dbname=localhost:/path/to/database.fdb',
     'SYSDBA',
@@ -136,11 +138,10 @@ try {
 ### Event Dispatching
 
 ```php
-use Psr\EventDispatcher\EventDispatcherInterface;
+use Minimale\Database\Driver\SQLiteDriver;
 
-$driver = DriverFactory::create(
-    ['dsn' => 'sqlite::memory:'],
-    $eventDispatcher // Your PSR-14 event dispatcher
+$driver = new SQLiteDriver(
+    eventDispatcher: $eventDispatcher // Your PSR-14 event dispatcher
 );
 ```
 
@@ -194,21 +195,17 @@ multiple databases in your application.
 
 ```php
 use Minimale\Database\DriverRegistry;
-use Minimale\Database\DriverFactory;
+use Minimale\Database\Driver\SQLiteDriver;
 
 $registry = new DriverRegistry();
 
 // Register multiple drivers
-$mysqlDriver = DriverFactory::create(['dsn' => 'mysql:host=localhost;dbname=app']);
-$mysqlDriver->connect('mysql:host=localhost;dbname=app', 'user', 'pass');
-$registry->add('mysql', $mysqlDriver);
-
-$sqliteDriver = DriverFactory::create(['dsn' => 'sqlite:/path/to/db.sqlite']);
+$sqliteDriver = new SQLiteDriver();
 $sqliteDriver->connect('sqlite:/path/to/db.sqlite');
 $registry->add('sqlite', $sqliteDriver);
 
 // Retrieve and use registered drivers
-$driver = $registry->get('mysql');
+$driver = $registry->get('sqlite');
 $db = new DatabaseManager($driver);
 
 // Check if driver exists
@@ -217,7 +214,7 @@ if ($registry->has('sqlite')) {
 }
 
 // List all registered aliases
-$aliases = $registry->all(); // ['mysql', 'sqlite']
+$aliases = $registry->all(); // ['sqlite']
 
 // Remove a driver
 $registry->remove('sqlite');
