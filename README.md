@@ -16,6 +16,7 @@ A minimal PDO wrapper for PHP 8.5+ with event dispatching and transaction suppor
   - [Transactions](#transactions)
   - [Event Dispatching](#event-dispatching)
   - [Data Transformation](#data-transformation)
+  - [Lazy Connections](#lazy-connections)
   - [Driver Registry](#driver-registry)
   - [Custom Drivers](#custom-drivers)
 - [Requirements](#requirements)
@@ -36,6 +37,7 @@ composer require minimale/database
 - **Multiple Drivers** — SQLite and Firebird support
 - **Type Safety** — Strict types throughout
 - **Query Normalization** — Automatic parameter binding and query normalization
+- **Lazy Connections** — Deferred database connections that connect only when needed
 - **Data Transformation** — Extensible data transformation layer
 
 ## Quick Start
@@ -153,6 +155,7 @@ The library dispatches the following events:
 - **TransactionBeganEvent** — Fired when a transaction starts
 - **TransactionCommittedEvent** — Fired when a transaction is committed
 - **TransactionRolledBackEvent** — Fired when a transaction is rolled back
+- **LazyConnectionRequestedEvent** — Fired when a lazy-wrapped driver needs to establish its connection
 
 ### Data Transformation
 
@@ -227,6 +230,69 @@ $registry->remove('sqlite');
 - **`has(string $alias): bool`** — Check if a driver is registered
 - **`remove(string $alias): void`** — Remove a driver from the registry
 - **`all(): array`** — Get all registered driver aliases
+
+### Lazy Connections
+
+The `LazyDriver` is a decorator that wraps any driver and defers the actual database connection until the first operation is performed (query, transaction, etc.). This is useful when you register multiple database connections but may not use all of them during a request.
+
+```php
+use Minimale\Database\Driver\LazyDriver;
+use Minimale\Database\Driver\SQLiteDriver;
+
+$driver = new LazyDriver(
+    driver: new SQLiteDriver(),
+    alias: 'default',
+    eventDispatcher: $eventDispatcher,
+);
+
+// No connection is established yet
+$db = new DatabaseManager($driver);
+
+// Connection is established now, on the first query
+$result = $db->execute('SELECT * FROM users');
+```
+
+When a lazy driver needs to connect, it dispatches a `LazyConnectionRequestedEvent`. You must listen for this event and call `connect()` on the driver:
+
+```php
+use Minimale\Database\Event\LazyConnectionRequestedEvent;
+
+$eventDispatcher->listen(LazyConnectionRequestedEvent::class, function (LazyConnectionRequestedEvent $event): void {
+    $alias = $event->getAlias();
+    $driver = $event->getDriver();
+
+    // Resolve connection parameters based on the alias
+    $driver->connect('sqlite:/path/to/database.db');
+});
+```
+
+This integrates well with the `DriverRegistry` for managing multiple lazy connections:
+
+```php
+use Minimale\Database\DriverRegistry;
+use Minimale\Database\Driver\LazyDriver;
+use Minimale\Database\Driver\SQLiteDriver;
+use Minimale\Database\Driver\FirebirdDriver;
+
+$registry = new DriverRegistry();
+
+$registry->add('sqlite', new LazyDriver(
+    driver: new SQLiteDriver(),
+    alias: 'sqlite',
+    eventDispatcher: $eventDispatcher,
+));
+
+$registry->add('firebird', new LazyDriver(
+    driver: new FirebirdDriver(),
+    alias: 'firebird',
+    eventDispatcher: $eventDispatcher,
+));
+
+// Connections are only established when each driver is actually used
+$driver = $registry->get('sqlite');
+$db = new DatabaseManager($driver);
+$db->execute('SELECT * FROM users'); // SQLite connects here
+```
 
 ### Custom Drivers
 
