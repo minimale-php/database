@@ -157,16 +157,6 @@ final class LazyDriverTest extends AbstractTestCase
         $this->lazyDriver->execute('SELECT 1');
     }
 
-    public function testExecuteThrowsConnectionExceptionWithoutEventDispatcher(): void
-    {
-        $lazyDriver = new LazyDriver($this->innerDriver, self::ALIAS);
-
-        $this->expectException(ConnectionException::class);
-        $this->expectExceptionMessage('Lazy connection for driver "client" could not be established');
-
-        $lazyDriver->execute('SELECT 1');
-    }
-
     public function testDirectConnectBypassesLazyMechanism(): void
     {
         $statement = Mockery::mock(PDOStatement::class);

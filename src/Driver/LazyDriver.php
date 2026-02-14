@@ -16,7 +16,7 @@ final class LazyDriver implements DriverInterface
     public function __construct(
         private readonly DriverInterface $driver,
         private readonly string $alias,
-        private readonly ?EventDispatcherInterface $eventDispatcher = null,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -75,9 +75,17 @@ final class LazyDriver implements DriverInterface
             return;
         }
 
-        $this->eventDispatcher?->dispatch(new LazyConnectionRequestedEvent($this->alias, $this));
+        $this->eventDispatcher->dispatch(new LazyConnectionRequestedEvent($this->alias, $this));
 
-        if (!$this->connected) { // @phpstan-ignore booleanNot.alwaysTrue (dispatch may call connect() as a side effect)
+        $this->assertConnected();
+    }
+
+    /**
+     * @throws ConnectionException if the driver is not connected
+     */
+    private function assertConnected(): void
+    {
+        if (!$this->connected) {
             throw new ConnectionException(
                 \sprintf('Lazy connection for driver "%s" could not be established', $this->alias),
             );
